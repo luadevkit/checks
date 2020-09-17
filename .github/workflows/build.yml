@@ -1,0 +1,35 @@
+name: 'Build'
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+    branches: [master]
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - '**.md'
+
+jobs:
+  test:
+    strategy:
+        fail-fast: true
+        matrix:
+          lua-version: [ '5.3', '5.4' ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: luadevkit/setup-lua@master
+        with:
+          lua-version: ${{ matrix.lua-version }}
+          luarocks-version: latest
+      - name: build
+        run: |
+          luarocks make
+      - name: test
+        run: |
+          luarocks install busted
+          luarocks test
