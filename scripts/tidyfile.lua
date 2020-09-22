@@ -7,17 +7,6 @@ local function open_file(filename, mode)
   return file
 end
 
-local function read_file(filename)
-  local file = open_file(filename, 'r')
-  local text, err = file:read('a')
-  if err then
-    error(err)
-  end
-
-  file:close()
-  return text:match('^%s*(.-)%s*$')
-end
-
 local function write_lines(filename, lines)
   local file = open_file(filename, 'w+b')
   for _, line in ipairs(lines) do
@@ -64,25 +53,12 @@ local function tidy_file(filename, lines)
   end
 end
 
-local function tidy_rockspec(filename, lines)
-  for line in io.lines(filename) do
-    local head, tail = line:match('^(%s*)(.-)%s*$')
-    head = head:gsub('   ', '  ')
-    line = head .. tail
-    if #line > 0 then
-      lines[#lines + 1] = line
-    end
-  end
-end
-
 local function run(...)
   local filenames = table.pack(...)
   for _, filename in ipairs(filenames) do
     local lines = {}
     if filename:match('%.md$') then
       tidy_markdown(filename, lines)
-    elseif filename:match('%.rockspec$') then
-      tidy_rockspec(filename, lines)
     else
       tidy_file(filename, lines)
     end

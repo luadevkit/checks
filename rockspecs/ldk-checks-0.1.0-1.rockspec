@@ -2,25 +2,25 @@ rockspec_format = "3.0"
 package = "ldk-checks"
 version = "0.1.0-1"
 source = {
-  url = "git://github.com/luadevkit/checks.git",
-  tag = "v0.1.0"
+   url = "git://github.com/luadevkit/checks.git",
+   tag = "v0.1.0"
 }
 description = {
-  summary = "Function Arguments Checks",
-  license = "MIT",
-  maintainer = "simone.livieri@gmail.com"
+   summary = "Function Arguments Checks",
+   license = "MIT",
+   maintainer = "simone.livieri@gmail.com"
 }
 dependencies = {
-  "lua >= 5.3"
+   "lua >= 5.3"
 }
 build = {
-  modules = {
-    ["ldk.checks"] = {
-      "csrc/checks.c",
-      "csrc/lerror.c"
-    }
-  }
+   modules = {
+      ["ldk.checks"] = {
+         "csrc/checks.c",
+         "csrc/lerror.c"
+      }
+   }
 }
 test = {
-  type = "busted"
+   type = "busted"
 }
