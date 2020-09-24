@@ -211,7 +211,7 @@ static int check_one(lua_State *L, int arg, const char *expected, size_t expecte
  *
  *    check_type(1, 'integer|table') -- matches an integer or a table
  *
- * A `nil` value can be matched by prefixing the type descriptor with a question mark:
+ * Finally, a `nil` value can be matched by prefixing the type descriptor with a question mark:
  *
  *    checktype(1, '?table') -- matches a table or nil
  *    checktype(1, 'nil|table') -- equivalent to the above
@@ -244,6 +244,9 @@ static int checks_check_type(lua_State *L)
 
 /***
  * Checks whether the arguments of the calling function are of the specified types.
+ *
+ * If last descriptor is prefixed with a `'*'`, it will match any remaining argument
+ * passed to the function.
  *
  * @function check_types
  * @param ... the descriptors of the expected types (see @{check_type}).
