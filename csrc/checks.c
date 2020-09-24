@@ -165,6 +165,7 @@ static int check_one(lua_State *L, int arg, const char *expected, size_t expecte
 
     const char *p = expected;
     const char *e = expected + expected_len;
+
     if (*p == '?')
     {
         if (rawtype == LUA_TNIL)
@@ -210,11 +211,12 @@ static int check_one(lua_State *L, int arg, const char *expected, size_t expecte
  *
  *    check_type(1, 'integer|table') -- matches an integer or a table
  *
- * Finally, a `nil` value can be matched by prefixing the type descriptor with a question mark:
+ * A `nil` value can be matched by prefixing the type descriptor with a question mark:
  *
  *    checktype(1, '?table') -- matches a table or nil
  *    checktype(1, 'nil|table') -- equivalent to the above
  *
+ * Finally, prefixing a type with `'*'` will
  * @function check_type
  * @tparam integer arg position of the argument to be tested.
  * @tparam string expected the descriptor of the expected type.
@@ -255,11 +257,25 @@ static int checks_check_types(lua_State *L)
     lua_Debug ar;
     lua_getstack(L, 1, &ar);
 
+    bool eat_all = false;
+    size_t expected_len;
+    const char *expected;
+
     int n = lua_gettop(L);
     for (int arg = 1; arg <= n; arg++)
     {
-        size_t expected_len;
-        const char *expected = luaL_checklstring(L, arg, &expected_len);
+        expected = luaL_checklstring(L, arg, &expected_len);
+        if (expected_len > 0 && *expected == '*')
+        {
+            if (arg < n)
+            {
+                return luaL_argerror(L, arg, "only the last descriptor can be prefixed by '*'");
+            }
+            eat_all = true;
+            expected++;
+            expected_len--;
+        }
+
         if (!lua_getlocal(L, &ar, arg))
         {
             return luaL_argerror(L, arg, "no more arguments");
@@ -269,6 +285,12 @@ static int checks_check_types(lua_State *L)
             return luaL_argerror(L, arg, "bad descriptor");
         }
     }
+
+    while(eat_all && lua_getlocal(L, &ar, ++n))
+    {
+        check_one(L, n, expected, expected_len);
+    }
+
     return 0;
 }
 

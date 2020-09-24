@@ -109,9 +109,18 @@ describe("ldk.checks", function()
           f(x, y)
         end
       end
+      local function f3(tag1, x, y, z)
+        local function f(_, _, _)
+          checks.check_types(tag1)
+        end
+        return function()
+          f(x, y, z)
+        end
+      end
       it("should report errors", function()
         assert.error(f2('boolean', 'string', nil, nil), "bad argument #1 to 'f' (boolean expected, got nil)")
         assert.error(f2('boolean', 'string', true, nil), "bad argument #2 to 'f' (string expected, got nil)")
+        assert.error(f3('*string', '1', 2, 3), "bad argument #2 to 'f' (string expected, got number)")
       end)
       it("should report missing arguments", function()
         assert.error(f1('boolean', 'string', true), "bad argument #2 to 'check_types' (no more arguments)")
