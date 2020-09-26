@@ -279,7 +279,7 @@ static int checks_check_types(lua_State *L)
             expected_len--;
         }
 
-        if (!lua_getlocal(L, &ar, arg))
+        if (!lua_getlocal(L, &ar, arg) && !eat_all)
         {
             return luaL_argerror(L, arg, "no more arguments");
         }
