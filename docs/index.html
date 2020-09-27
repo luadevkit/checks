@@ -2,7 +2,7 @@
 <html>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
 <head>
-<title>ldk-checks 0.2.1</title>
+<title>ldk-checks 0.3.0</title>
 <link rel="stylesheet" href="ldoc.css" type="text/css" />
 </head>
 <body>
@@ -44,6 +44,10 @@ Function argument checking.
 <tr>
 <td class="name" nowrap><a href="#check_types">check_types(...)</a></td>
 <td class="summary">Checks whether the arguments of the calling function are of the specified types.</td>
+</tr>
+<tr>
+<td class="name" nowrap><a href="#register">register(descriptor, check)</a></td>
+<td class="summary">Register a custom check for a given type descriptor.</td>
 </tr>
 </table>
 <!--<br/>
@@ -173,6 +177,24 @@ the descriptors of the expected types (see <a href="index.html#check_type">check
 <pre class="example"><span class="keyword">local</span> <span class="keyword">function</span> foo(t, filter)
   check_types(<span class="string">'table'</span>, <span class="string">'?function'</span>)
   ...</pre>
+</ul>
+</dd>
+<dt>
+<a name = "register"></a>
+<strong>register(descriptor, check)</strong>
+</dt>
+<dd>
+<p>Register a custom check for a given type descriptor. </p><p> Passing <code>nil</code> as the custom check function will unregister the custom check.</p>
+<h3>Parameters:</h3>
+<ul>
+<li><span class="parameter">descriptor</span>
+<span class="types"><span class="type">string</span></span>
+the type descriptor to register a check for.
+</li>
+<li><span class="parameter">check</span>
+<span class="types"><span class="type">function</span></span>
+the custom check function.
+</li>
 </ul>
 </dd>
 </dl>
