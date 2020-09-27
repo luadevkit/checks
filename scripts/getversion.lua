@@ -29,7 +29,7 @@ local function write_file(filename, text)
 end
 
 local function fail(fmt, ...)
-  io.stderr:write(fmt:format(...))
+  io.stderr:write(fmt:format(...), '\n')
   os.exit(1)
 end
 
