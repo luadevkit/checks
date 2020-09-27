@@ -5,12 +5,10 @@
 
 #include "lerror.h"
 
-#include <assert.h>
 #include <ctype.h>
 #include <lauxlib.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <string.h>
 
 #define CHK_EUSERDATA (1 << 0)
@@ -18,6 +16,8 @@
 
 #define CHK_STRLEN(x) (sizeof(x) - 1)
 #define CHK_STRNEQ(x, xl, y, yl) ((yl) == (xl) && strncmp(x, y, xl) == 0)
+
+static int checkers_index;
 
 static const char *getmetafield(lua_State *L, int arg, const char *field)
 {
@@ -72,8 +72,7 @@ static inline void append_one(luaL_Buffer *b, const char *p, size_t n, bool is_o
     }
 }
 
-static void append_descriptor(luaL_Buffer *b, const char *descriptor, const char *descriptor_end,
-                              bool is_option)
+static void append_descriptor(luaL_Buffer *b, const char *descriptor, const char *descriptor_end, bool is_option)
 {
     int n = 0;
 
@@ -93,8 +92,8 @@ static void append_descriptor(luaL_Buffer *b, const char *descriptor, const char
     append_one(b, p, (size_t)(descriptor_end - p), is_option);
 }
 
-static int type_error(lua_State *L, int arg, int type, const char *got, const char *expected,
-                      const char *expected_end, int flags)
+static int type_error(lua_State *L, int arg, int type, const char *got, const char *expected, const char *expected_end,
+                      int flags)
 {
     luaL_Buffer b;
     luaL_buffinit(L, &b);
@@ -116,10 +115,33 @@ static int type_error(lua_State *L, int arg, int type, const char *got, const ch
     return lerror_argerror(L, 1, arg, lua_tostring(L, -1));
 }
 
-static bool type_match_one(int rawtype, const char *got, size_t got_len, const char *expected,
+static bool type_match_one(lua_State *L, int rawtype, const char *got, size_t got_len, const char *expected,
                            size_t expected_len, int *flags)
 {
+    // checkers val
+
     if (CHK_STRNEQ(got, got_len, expected, expected_len)) return true;
+
+    lua_pushlstring(L, expected, expected_len); // checkers val expected
+    if (!lua_gettable(L, -3))                   // checkers val
+    {
+        lua_pop(L, 1); // checkers
+    }
+    else
+    {
+        if (lua_isfunction(L, -1))
+        {
+            lua_pushvalue(L, -2);     // checkers val checker val
+            lua_call(L, 1, 1);        // checkers val checker result
+            if (lua_toboolean(L, -1)) // checkers val checker result
+            {
+                lua_pop(L, 3); // checkers
+                return true;
+            }
+        }
+        lua_pop(L, 2);
+    }
+
     if (rawtype == LUA_TNUMBER)
     {
         return CHK_STRNEQ("number", 6, expected, expected_len);
@@ -138,26 +160,30 @@ static bool type_match_one(int rawtype, const char *got, size_t got_len, const c
         }
         return false;
     }
-    return rawtype != LUA_TNONE && rawtype != LUA_TNIL
-           && CHK_STRNEQ("any", 3, expected, expected_len);
+
+    return rawtype != LUA_TNONE && rawtype != LUA_TNIL && CHK_STRNEQ("any", 3, expected, expected_len);
 }
 
-static bool type_match(int rawtype, const char *got, const char *expected, const char *expected_end,
-                       int *flags)
+static bool type_match(lua_State *L, int arg, int rawtype, const char *got, const char *expected,
+                       const char *expected_end, int *flags)
 {
+    // checkers val
+
     size_t got_len = strlen(got);
 
     *flags = 0;
     const char *p = expected;
     for (const char *q = strchr(p, '|'); q != NULL; p = q + 1, q = strchr(p, '|'))
     {
-        if (type_match_one(rawtype, got, got_len, p, (size_t)(q - p), flags)) return true;
+        if (type_match_one(L, rawtype, got, got_len, p, (size_t)(q - p), flags)) return true;
     }
-    return type_match_one(rawtype, got, got_len, p, (size_t)(expected_end - p), flags);
+    return type_match_one(L, rawtype, got, got_len, p, (size_t)(expected_end - p), flags);
 }
 
 static int check_one(lua_State *L, int arg, const char *expected, size_t expected_len)
 {
+    // checkers val
+
     if (expected_len == 0) return 0;
 
     int rawtype;
@@ -168,16 +194,15 @@ static int check_one(lua_State *L, int arg, const char *expected, size_t expecte
 
     if (*p == '?')
     {
-        if (rawtype == LUA_TNIL)
-        {
-            lua_pop(L, 1);
-            return 0;
-        }
+        if (rawtype == LUA_TNIL) return 0;
         p++;
     }
 
     int flags;
-    if (type_match(rawtype, got, p, e, &flags)) return 0;
+    if (type_match(L, arg, rawtype, got, p, e, &flags)) return 0;
+
+    // clear the stack here because `type_error` does not
+    lua_pop(L, 2);
     return type_error(L, arg, rawtype, got, expected, e, flags);
 }
 
@@ -235,11 +260,14 @@ static int checks_check_type(lua_State *L)
     size_t expected_len;
     const char *expected = luaL_checklstring(L, 2, &expected_len);
 
-    if (!lua_getlocal(L, &ar, arg))
+    lua_geti(L, LUA_REGISTRYINDEX, checkers_index); // checkers
+    if (!lua_getlocal(L, &ar, arg))                 // checkers val
     {
         return luaL_argerror(L, 1, "invalid argument index");
     }
-    return check_one(L, arg, expected, expected_len);
+    check_one(L, arg, expected, expected_len);
+    lua_pop(L, 2);
+    return 0;
 }
 
 /***
@@ -265,6 +293,8 @@ static int checks_check_types(lua_State *L)
     const char *expected;
 
     int n = lua_gettop(L);
+
+    lua_geti(L, LUA_REGISTRYINDEX, checkers_index); // checkers
     for (int arg = 1; arg <= n; arg++)
     {
         expected = luaL_checklstring(L, arg, &expected_len);
@@ -279,19 +309,19 @@ static int checks_check_types(lua_State *L)
             expected_len--;
         }
 
-        if (!lua_getlocal(L, &ar, arg) && !eat_all)
+        if (!lua_getlocal(L, &ar, arg)) // val
         {
-            return luaL_argerror(L, arg, "no more arguments");
+            return eat_all ? 0 : luaL_argerror(L, arg, "no more arguments");
         }
-        if (check_one(L, arg, expected, expected_len) < 0)
-        {
-            return luaL_argerror(L, arg, "bad descriptor");
-        }
+
+        check_one(L, arg, expected, expected_len);
+        lua_pop(L, 1);
     }
 
-    while(eat_all && lua_getlocal(L, &ar, ++n))
+    while (eat_all && lua_getlocal(L, &ar, ++n))
     {
         check_one(L, n, expected, expected_len);
+        lua_pop(L, 1);
     }
 
     return 0;
@@ -338,8 +368,7 @@ static int checks_check_arg(lua_State *L)
     return lerror_argerror(L, 1, arg, luaL_optstring(L, 3, NULL));
 }
 
-static int option_error(lua_State *L, int arg, const char *got, const char *expected,
-                        const char *expected_end)
+static int option_error(lua_State *L, int arg, const char *got, const char *expected, const char *expected_end)
 {
     luaL_Buffer b;
     luaL_buffinit(L, &b);
@@ -429,6 +458,42 @@ static int checks_check_option(lua_State *L)
     return option_error(L, arg, got, options, e);
 }
 
+/**
+ * Register a custom check for a given type descriptor.
+ *
+ * Passing `nil` as the custom check function will unregister the custom check.
+ *
+ * @function register
+ * @tparam string descriptor the type descriptor to register a check for.
+ * @tparam function check the custom check function.
+ */
+static int checks_register(lua_State *L)
+{
+    size_t descriptor_len;
+    const char *descriptor = luaL_checklstring(L, 1, &descriptor_len);
+
+    if (descriptor_len == 0)
+    {
+        return luaL_argerror(L, 1, "name is empty");
+    }
+
+    lua_geti(L, LUA_REGISTRYINDEX, checkers_index); // checkers
+
+    if (lua_isnil(L, 2))
+    {
+        lua_pushnil(L);                  // checkers nil
+        lua_setfield(L, -2, descriptor); // checkers
+        lua_pop(L, 1);
+        return 0;
+    }
+
+    luaL_checktype(L, 2, LUA_TFUNCTION);
+    lua_pushvalue(L, 2);             // checkers function
+    lua_setfield(L, -2, descriptor); // checkers
+    lua_pop(L, 1);
+    return 0;
+}
+
 // clang-format off
 static const struct luaL_Reg funcs[] =
 {
@@ -438,6 +503,7 @@ static const struct luaL_Reg funcs[] =
     XX(check_option)
     XX(check_type)
     XX(check_types)
+    XX(register)
     { NULL, NULL }
 #undef XX
 };
@@ -445,6 +511,8 @@ static const struct luaL_Reg funcs[] =
 
 extern int luaopen_ldk_checks(lua_State *L)
 {
-  luaL_newlib(L, funcs);
-  return 1;
+    lua_newtable(L); // custom checks
+    checkers_index = luaL_ref(L, LUA_REGISTRYINDEX);
+    luaL_newlib(L, funcs);
+    return 1;
 }
