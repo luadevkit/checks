@@ -1,4 +1,4 @@
-project = 'ldk-core'
+project = 'ldk-checks'
 description = 'LDK - Function Arguments Checks'
 dir = '../docs'
 file = {

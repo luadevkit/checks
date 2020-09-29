@@ -10,7 +10,7 @@
 <div id="main">
 <div id="navigation">
 <br/>
-<h1>ldk-core</h1>
+<h1>ldk-checks</h1>
 <h2>Contents</h2>
 <ul>
 <li><a href="#Functions">Functions</a></li>
@@ -21,7 +21,7 @@
 </ul>
 </div>
 <div id="content">
-<h1>Module<code>ldk.checks</code></h1>
+<h1>Module <code>ldk.checks</code></h1>
 Function argument checking.
 <h2><a href="#Functions">Functions</a></h2>
 <table class="function_list">
@@ -140,7 +140,7 @@ if the descriptor is <code>nil</code> or empty; or if the argument position is i
 <strong>check_type(arg, expected)</strong>
 </dt>
 <dd>
-<p>Checks whether the specified argument of the calling function is of any of the types specified in the given descriptor. </p><p> The type of the argument at position <code>arg</code> must match one of the types in `expected.</p><p> Each type can be the name of a primitive Lua type:</p><ul>    <li><code>nil</code></li>    <li><code>boolean</code></li>    <li><code>userdata</code></li>    <li><code>number</code></li>    <li><code>string</code></li>    <li><code>table</code></li>    <li><code>function</code></li>    <li><code>thread</code></li></ul><p> one of the following options:</p><ul>    <li><code>any</code> (accepts any non-nil argument type)</li>    <li><code>file</code> (accepts a file object)</li>    <li><code>integer</code> (accepts an integer number)</li>    <li><code>float</code> (accepts a floating point number)</li>    <li>an arbitrary string, matched against the content of the <code>__type</code> or <code>__name</code> field of the    argument's metatable if the argument is table or a userdata, respectively.</li></ul><p> Multiple values can be accepted if concatenated with a bar <code>'|'</code>:</p><pre><code>check_type(1, 'integer|table') -- matches an integer or a table</code></pre><p> Finally, a <code>nil</code> value can be matched by prefixing the type descriptor with a question mark:</p><pre><code>checktype(1, '?table') -- matches a table or nilchecktype(1, 'nil|table') -- equivalent to the above</code></pre><p> Finally, prefixing a type with <code>'*'</code> will</p>
+<p><p>Checks whether the specified argument of the calling function is of any of the types specified in the given descriptor. </p><p> The type of the argument at position <code>arg</code> must match one of the types in `expected.</p><p> Each type can be the name of a primitive Lua type:</p><ul>    <li><code>nil</code></li>    <li><code>boolean</code></li>    <li><code>userdata</code></li>    <li><code>number</code></li>    <li><code>string</code></li>    <li><code>table</code></li>    <li><code>function</code></li>    <li><code>thread</code></li></ul><p> one of the following options:</p><ul>    <li><code>any</code> (accepts any non-nil argument type)</li>    <li><code>file</code> (accepts a file object)</li>    <li><code>integer</code> (accepts an integer number)</li>    <li><code>float</code> (accepts a floating point number)</li>    <li>an arbitrary string, matched against the content of the <code>__type</code> or <code>__name</code> field of the    argument's metatable if the argument is table or a userdata, respectively.</li></ul><p> Multiple values can be accepted if concatenated with a bar <code>'|'</code>:</p><pre><code>check_type(1, 'integer|table') -- matches an integer or a table</code></pre><p> Finally, a <code>nil</code> value can be matched by prefixing the type descriptor with a question mark:</p><pre><code> checktype(1, '?table') -- matches a table or nil</code></pre></p>
 <h3>Parameters:</h3>
 <ul>
 <li><span class="parameter">arg</span>
@@ -169,6 +169,7 @@ the descriptor of the expected type.
 <h3>Parameters:</h3>
 <ul>
 <li><span class="parameter">...</span>
+<span class="types"><span class="type">string</span></span>
 the descriptors of the expected types (see <a href="index.html#check_type">check_type</a>).
 </li>
 </ul>

@@ -238,10 +238,8 @@ static int check_one(lua_State *L, int arg, const char *expected, size_t expecte
  *
  * Finally, a `nil` value can be matched by prefixing the type descriptor with a question mark:
  *
- *    checktype(1, '?table') -- matches a table or nil
- *    checktype(1, 'nil|table') -- equivalent to the above
+ *     checktype(1, '?table') -- matches a table or nil
  *
- * Finally, prefixing a type with `'*'` will
  * @function check_type
  * @tparam integer arg position of the argument to be tested.
  * @tparam string expected the descriptor of the expected type.
@@ -277,7 +275,7 @@ static int checks_check_type(lua_State *L)
  * passed to the function.
  *
  * @function check_types
- * @param ... the descriptors of the expected types (see @{check_type}).
+ * @tparam string ... the descriptors of the expected types (see @{check_type}).
  * @usage
  *    local function foo(t, filter)
  *      check_types('table', '?function')

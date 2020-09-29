@@ -72,7 +72,7 @@
 # if ldoc.body then -- verbatim HTML as contents; 'non-code' entries
 $(ldoc.body)
 # elseif module then -- module documentation
-<h1>$(ldoc.module_typename(module))<code>$(module.name)</code></h1>
+<h1>$(ldoc.module_typename(module)) <code>$(module.name)</code></h1>
 
 $(M(module.summary,module))
 # if #module.description > 0 then
@@ -235,7 +235,7 @@ $(M(c.comment,item))</li>
 
 # if show_return and item.raise then
 <h3>Raises:</h3>
-$(M(item.raise,item))
+$(M(item.raise))
 # end
 # if item.see then
 # local li,il = use_li(item.see)
